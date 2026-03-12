@@ -39,6 +39,8 @@ def parse_args():
     p.add_argument("--headers",   action="store_true", help="HTTP security header audit")
     p.add_argument("--takeover",  action="store_true", help="Subdomain takeover detection")
     p.add_argument("--osint",     action="store_true", help="Run passive OSINT recon")
+    p.add_argument("--stack",     action="store_true", help="Technology stack + WAF fingerprinting")
+    p.add_argument("--dns",       action="store_true", help="DNS/email security (SPF, DKIM, DMARC, DNSSEC)")
     p.add_argument("--full",      action="store_true", help="Run ALL checks")
     p.add_argument("--report",    default="terminal",
                    choices=["terminal", "json", "html", "all"])
@@ -206,6 +208,24 @@ def run_single(target, args):
         print(f"[*] Checking subdomains for takeover (CT log discovery)…")
         takeover_result = discover_and_check(target)
 
+    # ── Stack Fingerprint ──
+    stack_result = None
+    do_stack = args.full or getattr(args, 'stack', False) or do_headers
+    if do_stack or do_headers:
+        from src.stack_fingerprint import fingerprint_stack
+        http_port2 = next((p.port for p in host_result.ports
+                          if p.service in ("http","https","http-alt","https-alt")), 443)
+        print(f"[*] Fingerprinting technology stack…")
+        stack_result = fingerprint_stack(target, http_port2)
+
+    # ── DNS Security ──
+    dns_result = None
+    do_dns = args.full or getattr(args, 'dns', False)
+    if do_dns:
+        from src.dns_security import check_dns_security
+        print(f"[*] Checking DNS/email security (SPF, DKIM, DMARC, DNSSEC)…")
+        dns_result = check_dns_security(target)
+
     # ── OSINT ──
     osint_result = None
     if do_osint:
@@ -217,6 +237,8 @@ def run_single(target, args):
         print_terminal_report(host_result, vuln_matches, osint_result)
         print_tls_results(tls_results, no_color)
         print_header_results(header_audit, no_color)
+        print_stack_results(stack_result, no_color)
+        print_dns_results(dns_result, no_color)
         print_takeover_results(takeover_result, no_color)
 
     safe_name = target.replace("/","_").replace(":","_")
@@ -289,3 +311,159 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# ─── Stack Fingerprint Printer ────────────────────────────────────────────────
+
+def print_stack_results(stack, no_color=False):
+    if not stack or not (stack.technologies or stack.waf.detected):
+        return
+    R = C.RESET if not no_color else ""
+    D = C.DIM   if not no_color else ""
+    W = C.WHITE if not no_color else ""
+    Y = C.YELLOW if not no_color else ""
+    G = C.GREEN  if not no_color else ""
+    Rd = C.RED   if not no_color else ""
+    Cy = C.CYAN  if not no_color else ""
+    Bo = C.BOLD  if not no_color else ""
+
+    print(f"\n{'─'*70}")
+    print(f"  TECHNOLOGY STACK FINGERPRINT")
+    print(f"{'─'*70}")
+
+    if stack.cloud_provider:
+        print(f"  Cloud    : {Cy}{stack.cloud_provider}{R}")
+    if stack.cdn:
+        print(f"  CDN      : {Cy}{stack.cdn}{R}")
+
+    # WAF
+    if stack.waf.detected:
+        conf_color = Rd if stack.waf.confidence == "HIGH" else Y
+        print(f"\n  {Bo}{Y}⛨  WAF DETECTED: {stack.waf.name}  [{stack.waf.confidence} confidence]{R}")
+        print(f"  {D}Evidence : {stack.waf.evidence}{R}")
+        if stack.waf.bypass_notes:
+            print(f"  {D}Bypass   : {stack.waf.bypass_notes}{R}")
+    else:
+        print(f"\n  {G}⛨  No WAF detected — direct server access{R}")
+
+    # Technologies grouped by category
+    if stack.technologies:
+        print()
+        by_cat = {}
+        for t in stack.technologies:
+            by_cat.setdefault(t.category, []).append(t)
+
+        cat_order = ["CMS", "Framework", "Language", "Server", "Cloud", "CDN",
+                     "Cache", "Proxy", "Analytics", "Payment", "Hosting", "Finding"]
+        for cat in cat_order:
+            techs = by_cat.get(cat, [])
+            if not techs:
+                continue
+            for t in techs:
+                ver_str = f" {t.version}" if t.version else ""
+                conf_d = f"{D}[{t.confidence}]{R}" if t.confidence != "HIGH" else ""
+                flag = f"  {Rd}⚠ {t.notes}{R}" if t.notes else ""
+                cve_str = f"  {Y}→ CVEs: {', '.join(t.cves[:3])}{R}" if t.cves else ""
+                print(f"  {Bo}{cat:<12}{R}  {W}{t.name}{ver_str}{R} {conf_d}{flag}{cve_str}")
+                if t.evidence:
+                    print(f"  {' '*12}  {D}via: {t.evidence[:80]}{R}")
+
+
+# ─── DNS Security Printer ─────────────────────────────────────────────────────
+
+def print_dns_results(dns, no_color=False):
+    if not dns:
+        return
+    R  = C.RESET  if not no_color else ""
+    D  = C.DIM    if not no_color else ""
+    Bo = C.BOLD   if not no_color else ""
+    G  = C.GREEN  if not no_color else ""
+    Y  = C.YELLOW if not no_color else ""
+    Rd = C.RED    if not no_color else ""
+    Or = C.ORANGE if not no_color else ""
+    Cy = C.CYAN   if not no_color else ""
+
+    spoof_color = Rd if dns.spoofability_score >= 7 else Or if dns.spoofability_score >= 4 else G
+    print(f"\n{'─'*70}")
+    print(f"  DNS & EMAIL SECURITY  —  Spoofability: {spoof_color}{Bo}{dns.spoofability_score}/10{R}  "
+          f"{'(SPOOFABLE)' if dns.email_spoofable else '(Protected)'}")
+    print(f"{'─'*70}")
+
+    # SPF
+    spf = dns.spf
+    spf_ok = spf.present and spf.valid
+    spf_icon = f"{G}✓{R}" if spf_ok else f"{Rd}✗{R}"
+    print(f"\n  SPF    {spf_icon}  ", end="")
+    if not spf.present:
+        print(f"{Rd}MISSING — anyone can spoof this domain{R}")
+    else:
+        print(f"{spf.record[:70]}")
+        print(f"  {'':9}all={spf.all_mechanism or 'none'}  lookups≈{spf.mechanism_count}")
+        for issue in spf.issues:
+            print(f"  {'':9}{Y}⚠ {issue}{R}")
+
+    # DKIM
+    dkim = dns.dkim
+    dkim_ok = bool(dkim.found_selectors)
+    dkim_icon = f"{G}✓{R}" if dkim_ok else f"{Rd}✗{R}"
+    print(f"\n  DKIM   {dkim_icon}  ", end="")
+    if dkim.found_selectors:
+        print(f"Selectors found: {Cy}{', '.join(dkim.found_selectors)}{R}")
+    else:
+        print(f"{Rd}No selectors found (checked {len(dkim.checked_selectors)} common names){R}")
+    for issue in dkim.issues:
+        print(f"  {'':9}{Y}⚠ {issue}{R}")
+
+    # DMARC
+    dmarc = dns.dmarc
+    policy_color = G if dmarc.policy == "reject" else Y if dmarc.policy == "quarantine" else Rd
+    dmarc_ok = dmarc.present and dmarc.policy in ("quarantine", "reject")
+    dmarc_icon = f"{G}✓{R}" if dmarc_ok else f"{Rd}✗{R}"
+    print(f"\n  DMARC  {dmarc_icon}  ", end="")
+    if not dmarc.present:
+        print(f"{Rd}MISSING — no policy enforcement{R}")
+    else:
+        print(f"p={policy_color}{Bo}{dmarc.policy}{R}  pct={dmarc.pct}%  "
+              f"sp={dmarc.subdomain_policy or 'inherit'}")
+        if dmarc.rua:
+            print(f"  {'':9}reports → {', '.join(dmarc.rua[:2])}")
+        for issue in dmarc.issues:
+            print(f"  {'':9}{Y}⚠ {issue}{R}")
+
+    # DNSSEC
+    dnssec_icon = f"{G}✓{R}" if dns.dnssec.enabled else f"{D}–{R}"
+    print(f"\n  DNSSEC {dnssec_icon}  {'Enabled' if dns.dnssec.enabled else f'{D}Not configured{R}'}")
+
+    # CAA
+    caa_icon = f"{G}✓{R}" if dns.caa.present else f"{D}–{R}"
+    print(f"  CAA    {caa_icon}  ", end="")
+    if dns.caa.present:
+        print(f"{', '.join(dns.caa.records[:3])}")
+    else:
+        print(f"{D}Not configured{R}")
+
+    # MX
+    if dns.mx_records:
+        print(f"\n  MX Records:")
+        for mx in dns.mx_records:
+            provider_str = f"  [{mx.provider}]" if mx.provider else ""
+            print(f"  {'':9}{mx.priority:>4}  {Cy}{mx.host}{R}{D}{provider_str}{R}")
+
+    # Zone transfer
+    if dns.zone_transfer_vulnerable:
+        print(f"\n  {Bo}{Rd}⚠ ZONE TRANSFER VULNERABLE — full DNS records exposed!{R}")
+        for rec in dns.zone_transfer_data[:5]:
+            print(f"  {D}  {rec}{R}")
+
+    # Wildcard
+    if dns.wildcard_dns:
+        print(f"\n  {Y}⚠ Wildcard DNS active (*.{dns.domain} resolves){R}")
+
+    # Findings summary
+    if dns.findings:
+        print(f"\n  Findings:")
+        for f in dns.findings:
+            sev_color = Rd if f['severity']=="CRITICAL" else Or if f['severity']=="HIGH" else Y
+            print(f"  {sev_color}{Bo}{f['severity']:<10}{R}  {f['title']}")
+            print(f"  {'':12}{D}{f['detail'][:110]}{'…' if len(f['detail'])>110 else ''}{R}")
+            if f.get('recommendation'):
+                print(f"  {'':12}{Cy}Fix: {f['recommendation'][:90]}{R}")
