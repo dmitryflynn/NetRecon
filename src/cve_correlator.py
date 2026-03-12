@@ -282,3 +282,208 @@ def severity_label(score: float) -> str:
     if score >= 4.0:
         return "MEDIUM"
     return "LOW"
+
+# ─── Extended CVE Signatures (appended) ──────────────────────────────────────
+# These extend OFFLINE_SIGNATURES at runtime
+
+EXTENDED_SIGNATURES = [
+    # OpenSSH additional
+    ("openssh", lambda v: _ver_lt(v, "9.3"),
+     "CVE-2023-38408", 9.8, "CRITICAL",
+     "AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+     "OpenSSH < 9.3p2 ssh-agent RCE via malicious PKCS#11 provider — exploitable remotely if agent forwarding is enabled."),
+
+    ("openssh", lambda v: _ver_lt(v, "8.4"),
+     "CVE-2020-15778", 7.8, "HIGH",
+     "AV:L/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H",
+     "OpenSSH scp command injection via shell metacharacters in remote filenames."),
+
+    # Apache additional
+    ("apache", lambda v: _ver_in_range(v, "2.4.49", "2.4.49"),
+     "CVE-2021-41773", 9.8, "CRITICAL",
+     "AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+     "Apache 2.4.49 path traversal + RCE via ../ sequences. Massively exploited within 24h. Metasploit module available."),
+
+    ("apache", lambda v: _ver_lt(v, "2.4.51"),
+     "CVE-2021-40438", 9.0, "CRITICAL",
+     "AV:N/AC:H/PR:N/UI:N/S:C/C:H/I:H/A:H",
+     "Apache mod_proxy SSRF via unix: scheme — routes requests to internal Unix domain sockets."),
+
+    ("apache", lambda v: _ver_lt(v, "2.4.46"),
+     "CVE-2020-11984", 9.8, "CRITICAL",
+     "AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+     "Apache mod_proxy_uwsgi buffer overflow — unauthenticated RCE via crafted request."),
+
+    # nginx additional
+    ("nginx", lambda v: _ver_lt(v, "1.25.3"),
+     "CVE-2023-44487", 7.5, "HIGH",
+     "AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+     "HTTP/2 Rapid Reset Attack — send+cancel streams at high rate to exhaust nginx worker processes."),
+
+    ("nginx", lambda v: _ver_lt(v, "1.20.1"),
+     "CVE-2021-23017", 7.7, "HIGH",
+     "AV:N/AC:H/PR:N/UI:N/S:C/C:L/I:H/A:H",
+     "nginx DNS resolver 1-byte heap overwrite via crafted DNS response."),
+
+    # IIS
+    ("iis", lambda v: True,
+     "CVE-2022-21907", 9.8, "CRITICAL",
+     "AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+     "IIS HTTP Protocol Stack wormable RCE — pre-auth, enabled by default on Windows Server 2022/Win11."),
+
+    ("iis", lambda v: _ver_lt(v, "7.5"),
+     "CVE-2017-7269", 10.0, "CRITICAL",
+     "AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+     "IIS 6.0 WebDAV buffer overflow — pre-auth RCE. Metasploit module available, widely exploited."),
+
+    # PHP
+    ("php", lambda v: _ver_lt(v, "8.1.0"),
+     "CVE-2022-31626", 8.8, "HIGH",
+     "AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+     "PHP < 8.1.0 password_verify() buffer overflow via very long password strings."),
+
+    ("php", lambda v: _ver_lt(v, "7.4.0"),
+     "CVE-2019-11043", 9.8, "CRITICAL",
+     "AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+     "PHP-FPM + nginx path_info buffer underflow — unauthenticated RCE. Exploitable with specific nginx config. PoC public."),
+
+    ("php", lambda v: _ver_lt(v, "7.0.0"),
+     "CVE-2016-7124", 7.5, "HIGH",
+     "AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+     "PHP 5.x unserialize() invalid __wakeup() bypass — PHP object injection."),
+
+    # WordPress (version-specific)
+    ("wordpress", lambda v: _ver_lt(v, "6.4.2"),
+     "CVE-2024-21726", 9.8, "CRITICAL",
+     "AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+     "WordPress < 6.4.2 PHP object injection in WP_HTML_Token — unauthenticated RCE in certain configurations."),
+
+    ("wordpress", lambda v: _ver_lt(v, "5.8.3"),
+     "CVE-2022-21663", 6.6, "MEDIUM",
+     "AV:N/AC:H/PR:H/UI:N/S:U/C:H/I:H/A:H",
+     "WordPress < 5.8.3 SQL injection in WP_Meta_Query — authenticated admin can extract db contents."),
+
+    # Drupal
+    ("drupal", lambda v: _ver_lt(v, "8.9.0"),
+     "CVE-2018-7600", 9.8, "CRITICAL",
+     "AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+     "Drupal 'Drupalgeddon2' — unauthenticated RCE via form API #access callbacks. Widely exploited, full Metasploit module."),
+
+    ("drupal", lambda v: _ver_lt(v, "7.62"),
+     "CVE-2019-6340", 9.8, "CRITICAL",
+     "AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+     "Drupal REST API remote code execution via PHP object injection — unauthenticated with REST module enabled."),
+
+    # Joomla
+    ("joomla", lambda v: _ver_lt(v, "4.2.8"),
+     "CVE-2023-23752", 5.3, "MEDIUM",
+     "AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N",
+     "Joomla < 4.2.8 improper access check — unauthenticated read of configuration.php via /api/index.php/v1/config/application?public=true."),
+
+    # Tomcat
+    ("tomcat", lambda v: _ver_lt(v, "9.0.31"),
+     "CVE-2020-1938", 9.8, "CRITICAL",
+     "AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+     "Apache Tomcat 'Ghostcat' — AJP connector file read/inclusion + RCE if file upload possible. Port 8009 vulnerable."),
+
+    ("tomcat", lambda v: _ver_lt(v, "10.0.27"),
+     "CVE-2022-34305", 6.1, "MEDIUM",
+     "AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N",
+     "Apache Tomcat XSS in examples web applications via CGI servlet."),
+
+    # Elasticsearch
+    ("elasticsearch", lambda v: _ver_lt(v, "7.13.4"),
+     "CVE-2021-22144", 6.5, "MEDIUM",
+     "AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N",
+     "Elasticsearch < 7.13.4 information disclosure — detailed error messages leak cluster configuration."),
+
+    ("elasticsearch", lambda v: _ver_lt(v, "6.8.0"),
+     "CVE-2019-7614", 7.5, "HIGH",
+     "AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+     "Elasticsearch CSRF via URLs that bypass security — data exfiltration via cross-origin requests."),
+
+    # Redis additional
+    ("redis", lambda v: _ver_lt(v, "7.0.6"),
+     "CVE-2022-35977", 5.5, "MEDIUM",
+     "AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H",
+     "Redis < 7.0.6 integer overflow DoS via SETRANGE or SORT commands with large values."),
+
+    ("redis", lambda v: _ver_lt(v, "6.2.0"),
+     "CVE-2021-32625", 9.8, "CRITICAL",
+     "AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+     "Redis < 6.2.0 unauthenticated RCE via Lua script integer overflow — full server compromise."),
+
+    ("redis", lambda v: _ver_lt(v, "5.0.14"),
+     "CVE-2022-0543", 10.0, "CRITICAL",
+     "AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+     "Redis Debian/Ubuntu package Lua sandbox escape — unauthenticated RCE via Lua environment variable leak."),
+
+    # vsftpd
+    ("vsftpd", lambda v: v == "2.3.4",
+     "CVE-2011-2523", 10.0, "CRITICAL",
+     "AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+     "vsftpd 2.3.4 backdoor — username with :) triggers a bind shell on port 6200. Remote root access. Metasploit module available."),
+
+    # ProFTPD
+    ("proftpd", lambda v: _ver_lt(v, "1.3.7c"),
+     "CVE-2021-46854", 9.1, "CRITICAL",
+     "AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N",
+     "ProFTPD < 1.3.7c out-of-bounds read via malformed UTF-8 sequence — potential RCE."),
+
+    ("proftpd", lambda v: _ver_lt(v, "1.3.6"),
+     "CVE-2019-12815", 9.8, "CRITICAL",
+     "AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+     "ProFTPD mod_copy arbitrary file copy without authentication via SITE CPFR/CPTO commands."),
+
+    # MongoDB
+    ("mongodb", lambda v: _ver_lt(v, "4.4.0"),
+     "CVE-2021-20328", 6.8, "MEDIUM",
+     "AV:N/AC:H/PR:L/UI:N/S:U/C:H/I:H/A:N",
+     "MongoDB < 4.4 client-side field level encryption certificate validation bypass — MITM possible."),
+
+    # PostgreSQL
+    ("postgresql", lambda v: _ver_lt(v, "14.0"),
+     "CVE-2021-3393", 3.1, "LOW",
+     "AV:N/AC:H/PR:L/UI:N/S:U/C:L/I:N/A:N",
+     "PostgreSQL < 14.0 partial-index predicate information disclosure to unprivileged users."),
+
+    ("postgresql", lambda v: _ver_lt(v, "13.3"),
+     "CVE-2021-32029", 6.5, "MEDIUM",
+     "AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N",
+     "PostgreSQL incomplete fix for CVE-2021-20229 — authenticated users can read arbitrary server files via COPY."),
+
+    # MSSQL
+    ("mssql", lambda v: True,
+     "CVE-2022-35845", 8.8, "HIGH",
+     "AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+     "Microsoft SQL Server Remote Code Execution via Extended Stored Procedures — authenticated SQL exec."),
+
+    # Memcached
+    ("memcached", lambda v: _ver_lt(v, "1.6.0"),
+     "CVE-2018-1000115", 7.5, "HIGH",
+     "AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+     "Memcached UDP reflection/amplification DRDoS — 50,000x amplification factor. Used in 1.7Tbps attack."),
+
+    # Log4j (Java apps)
+    ("log4j", lambda v: _ver_lt(v, "2.17.1"),
+     "CVE-2021-44228", 10.0, "CRITICAL",
+     "AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+     "Log4Shell — Log4j2 JNDI injection unauthenticated RCE via any logged user input. Most critical Java vuln in a decade. Affects thousands of products."),
+
+    # Spring Framework
+    ("spring", lambda v: _ver_lt(v, "5.3.18"),
+     "CVE-2022-22965", 9.8, "CRITICAL",
+     "AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+     "Spring4Shell — Spring MVC RCE via data binding on JDK 9+ with Tomcat WAR deployment. Metasploit module available."),
+]
+
+# Merge extended signatures into main list at import time
+def _load_extended():
+    global OFFLINE_SIGNATURES
+    existing_cves = {s[2] for s in OFFLINE_SIGNATURES}
+    for sig in EXTENDED_SIGNATURES:
+        if sig[2] not in existing_cves:
+            OFFLINE_SIGNATURES.append(sig)
+            existing_cves.add(sig[2])
+
+_load_extended()
