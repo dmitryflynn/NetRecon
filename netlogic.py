@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""NetRecon v2.0 — Attack Surface Mapper & Vulnerability Correlator"""
+"""NetLogic v2.0 — Attack Surface Mapper & Vulnerability Correlator"""
 
 import argparse
 import sys
@@ -31,7 +31,7 @@ BANNER = f"""
 
 
 def parse_args():
-    p = argparse.ArgumentParser(description="NetRecon — network recon and vulnerability correlation")
+    p = argparse.ArgumentParser(description="NetLogic — network recon and vulnerability correlation")
     p.add_argument("target", help="Host, IP, or CIDR range to scan")
     p.add_argument("--ports",     default="quick",
                    help="quick|full|custom=21,22,80,443  (default: quick)")
@@ -54,11 +54,11 @@ def parse_args():
     p.add_argument("--min-cvss",  type=float, default=4.0,
                    help="Minimum CVSS score to report (default: 4.0)")
     p.add_argument("--nvd-key",   default="",
-                   help="NVD API key for higher rate limits (or set NETRECON_NVD_KEY env var)")
+                   help="NVD API key for higher rate limits (or set NETLOGIC_NVD_KEY env var)")
     p.add_argument("--clear-cache", action="store_true", help="Clear NVD cache and exit")
     p.add_argument("--cache-stats", action="store_true", help="Show NVD cache stats and exit")
     p.add_argument("--preload-cache", action="store_true", help="Pre-populate NVD cache for common products")
-    p.add_argument("--version",   action="version", version=f"NetRecon {VERSION}")
+    p.add_argument("--version",   action="version", version=f"NetLogic {VERSION}")
     return p.parse_args()
 
 
@@ -267,12 +267,12 @@ def run_single(target, args):
         if takeover_result:
             from dataclasses import asdict
             report["takeover"] = asdict(takeover_result)
-        save_json_report(report, os.path.join(args.out, f"netrecon_{safe_name}_{ts}.json"))
+        save_json_report(report, os.path.join(args.out, f"netlogic_{safe_name}_{ts}.json"))
 
     if args.report in ("html", "all"):
         os.makedirs(args.out, exist_ok=True)
         html_content = generate_html_report(host_result, vuln_matches, osint_result)
-        save_html_report(html_content, os.path.join(args.out, f"netrecon_{safe_name}_{ts}.html"))
+        save_html_report(html_content, os.path.join(args.out, f"netlogic_{safe_name}_{ts}.html"))
 
 
 def run_cidr(cidr, args):
@@ -288,7 +288,7 @@ def run_cidr(cidr, args):
             os.makedirs(args.out, exist_ok=True)
             ts = time.strftime("%Y%m%d_%H%M%S")
             save_json_report(generate_json_report(hr, vm),
-                             os.path.join(args.out, f"netrecon_{hr.ip}_{ts}.json"))
+                             os.path.join(args.out, f"netlogic_{hr.ip}_{ts}.json"))
 
 
 def main():
@@ -310,7 +310,7 @@ def main():
     if not args.no_color:
         print(BANNER)
     else:
-        print(f"NetRecon v{VERSION}\n")
+        print(f"NetLogic v{VERSION}\n")
     print(f"  For authorized use only.\n")
 
     if args.cidr:

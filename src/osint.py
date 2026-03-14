@@ -1,5 +1,5 @@
 """
-NetRecon - OSINT / Passive Reconnaissance Module
+NetLogic - OSINT / Passive Reconnaissance Module
 Aggregates public intelligence without touching the target directly:
   - DNS enumeration (A, MX, TXT, NS, CNAME, SOA, SRV)
   - Subdomain discovery via Certificate Transparency logs (crt.sh)
@@ -64,7 +64,7 @@ def query_dns_doh(name: str, record_type: str) -> list[str]:
     try:
         req = urllib.request.Request(url, headers={
             "Accept": "application/dns-json",
-            "User-Agent": "NetRecon/1.0",
+            "User-Agent": "NetLogic/2.0",
         })
         with urllib.request.urlopen(req, timeout=5) as resp:
             data = json.loads(resp.read())
@@ -103,7 +103,7 @@ def fetch_ct_subdomains(domain: str) -> list[SubdomainEntry]:
     seen = set()
 
     try:
-        req = urllib.request.Request(url, headers={"User-Agent": "NetRecon/1.0"})
+        req = urllib.request.Request(url, headers={"User-Agent": "NetLogic/1.0"})
         with urllib.request.urlopen(req, timeout=10) as resp:
             data = json.loads(resp.read())
     except Exception:
@@ -136,7 +136,7 @@ def lookup_asn(ip: str) -> Optional[ASNInfo]:
     """
     try:
         url = f"https://ipinfo.io/{ip}/json"
-        req = urllib.request.Request(url, headers={"User-Agent": "NetRecon/1.0"})
+        req = urllib.request.Request(url, headers={"User-Agent": "NetLogicReplace/1.0"})
         with urllib.request.urlopen(req, timeout=5) as resp:
             data = json.loads(resp.read())
         return ASNInfo(
@@ -187,7 +187,7 @@ def fingerprint_http(target: str, port: int = 80) -> list[str]:
     detected = []
     try:
         req = urllib.request.Request(url, method="HEAD", headers={
-            "User-Agent": "Mozilla/5.0 (compatible; NetRecon/1.0)",
+            "User-Agent": "Mozilla/5.0 (compatible; NetLogicReplace/1.0)",
         })
         # We deliberately ignore cert verification errors for recon
         import ssl

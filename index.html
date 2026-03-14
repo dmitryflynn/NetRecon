@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self' 'unsafe-inline';">
-<title>NetRecon</title>
+<title>NetLogic Replace</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
 
@@ -837,14 +837,14 @@ html, body {
   <div id="titlebar">
     <div id="titlebar-logo">
       <div class="dot"></div>
-      NETRECON
+      NETLOGIC REPLACE
     </div>
     <div id="titlebar-spacer"></div>
     <div id="titlebar-status">READY</div>
     <div id="window-controls">
-      <button class="win-btn" onclick="window.netrecon.minimize()" title="Minimize">─</button>
-      <button class="win-btn" onclick="window.netrecon.maximize()" title="Maximize">□</button>
-      <button class="win-btn close" onclick="window.netrecon.closeApp()" title="Close">✕</button>
+      <button class="win-btn" onclick="window.netlogic.minimize()" title="Minimize">─</button>
+      <button class="win-btn" onclick="window.netlogic.maximize()" title="Maximize">□</button>
+      <button class="win-btn close" onclick="window.netlogic.closeApp()" title="Close">✕</button>
     </div>
   </div>
 
@@ -874,7 +874,7 @@ html, body {
       </div>
 
       <div id="sidebar-footer">
-        NetRecon v1.0.0<br>
+        NetLogic Replace v1.0.0<br>
         <span id="python-status" style="color:var(--text-dim)">Checking Python…</span>
       </div>
     </div>
@@ -965,7 +965,7 @@ html, body {
 
             <div class="sidebar-section" id="log-panel">
               <div class="sidebar-section-title">Live Log</div>
-              <div id="log-output"><span class="log-info">[netrecon] Waiting for scan…</span></div>
+              <div id="log-output"><span class="log-info">[netlogic] Waiting for scan…</span></div>
             </div>
 
             <div id="export-bar">
@@ -1008,13 +1008,13 @@ html, body {
         <div class="about-block">
           <h3>Version Info</h3>
           <div class="version-info" id="version-info">
-            <span>App <span class="val">NetRecon 1.0.0</span></span>
+            <span>App <span class="val">NetLogic Replace 1.0.0</span></span>
           </div>
         </div>
         <div class="about-block">
           <h3>Legal Notice</h3>
           <p>
-            NetRecon is for authorized security assessments only. Always obtain explicit written permission before scanning systems you do not own. Unauthorized scanning may violate the Computer Fraud and Abuse Act and equivalent laws.
+            NetLogic Replace is for authorized security assessments only. Always obtain explicit written permission before scanning systems you do not own. Unauthorized scanning may violate the Computer Fraud and Abuse Act and equivalent laws.
           </p>
         </div>
       </div><!-- /about-view -->
@@ -1027,7 +1027,7 @@ html, body {
 
 <script>
 /* ═══════════════════════════════════════════════════════════════
-   NETRECON RENDERER — App Logic
+   NETLOGIC REPLACE RENDERER — App Logic
 ═══════════════════════════════════════════════════════════════ */
 
 // ─── State ────────────────────────────────────────────────────
@@ -1078,26 +1078,26 @@ function startScan() {
   setTitleStatus('SCANNING ' + target, true);
 
   // Register listeners
-  window.netrecon.removeAllScanListeners();
-  window.netrecon.onScanStarted(d => appendLog(`Scanning ${d.target}…`, 'info'));
-  window.netrecon.onScanHost(d    => handleHostInfo(d));
-  window.netrecon.onScanPort(d    => handlePort(d));
-  window.netrecon.onScanVuln(d    => handleVuln(d));
-  window.netrecon.onScanOSINT(d   => handleOSINT(d));
-  window.netrecon.onScanProgress(d=> handleProgress(d));
-  window.netrecon.onScanLog(d     => appendLog(d.text, d.level || 'info'));
-  window.netrecon.onScanDone(d    => finalizeScan(d));
-  window.netrecon.onScanStopped(() => finalizeScan({ stopped: true }));
-  window.netrecon.onScanError(d   => {
+  window.netlogic.removeAllScanListeners();
+  window.netlogic.onScanStarted(d => appendLog(`Scanning ${d.target}…`, 'info'));
+  window.netlogic.onScanHost(d    => handleHostInfo(d));
+  window.netlogic.onScanPort(d    => handlePort(d));
+  window.netlogic.onScanVuln(d    => handleVuln(d));
+  window.netlogic.onScanOSINT(d   => handleOSINT(d));
+  window.netlogic.onScanProgress(d=> handleProgress(d));
+  window.netlogic.onScanLog(d     => appendLog(d.text, d.level || 'info'));
+  window.netlogic.onScanDone(d    => finalizeScan(d));
+  window.netlogic.onScanStopped(() => finalizeScan({ stopped: true }));
+  window.netlogic.onScanError(d   => {
     appendLog('ERROR: ' + d.message, 'warn');
     finalizeScan({ error: d.message });
   });
 
-  window.netrecon.startScan(config);
+  window.netlogic.startScan(config);
 }
 
 function stopScan() {
-  window.netrecon.stopScan();
+  window.netlogic.stopScan();
   appendLog('Scan stopped by user.', 'warn');
 }
 
@@ -1323,7 +1323,7 @@ function enableExports() {
 
 async function exportReport(format) {
   const data = buildReportData();
-  const result = await window.netrecon.exportReport({ format, data });
+  const result = await window.netlogic.exportReport({ format, data });
   if (result?.saved) toast(`${format.toUpperCase()} report saved.`, 'success');
   else if (result?.error) toast('Export failed: ' + result.error, 'error');
 }
@@ -1442,7 +1442,7 @@ document.getElementById('target-input').addEventListener('keydown', e => {
 async function init() {
   // Check Python availability
   try {
-    const r = await window.netrecon.checkPython();
+    const r = await window.netlogic.checkPython();
     const el = document.getElementById('python-status');
     if (r.available) {
       el.textContent = '✓ Python ready';
@@ -1456,9 +1456,9 @@ async function init() {
 
   // Version info
   try {
-    const v = await window.netrecon.getVersions();
+    const v = await window.netlogic.getVersions();
     document.getElementById('version-info').innerHTML = `
-      <span>App <span class="val">NetRecon 1.0.0</span></span>
+      <span>App <span class="val">NetLogic Replace 1.0.0</span></span>
       <span>Electron <span class="val">${v.electron}</span></span>
       <span>Node <span class="val">${v.node}</span></span>
       <span>Platform <span class="val">${v.platform}</span></span>

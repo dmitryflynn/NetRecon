@@ -1,8 +1,8 @@
-# NetRecon 🔍
+# NetLogic Replace 🔍
 
 **Attack Surface Mapper & Vulnerability Correlator**
 
-NetRecon is a professional-grade network security reconnaissance tool that combines active port scanning, passive OSINT, and automated CVE correlation into a single workflow — replacing what typically requires three or four separate tools and manual cross-referencing.
+NetLogic Replace is a professional-grade network security reconnaissance tool that combines active port scanning, passive OSINT, and automated CVE correlation into a single workflow — replacing what typically requires three or four separate tools and manual cross-referencing.
 
 ![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue)
 ![License: MIT](https://img.shields.io/badge/License-MIT-green)
@@ -12,7 +12,7 @@ NetRecon is a professional-grade network security reconnaissance tool that combi
 
 ## What makes this different?
 
-Most scanners stop at port discovery. NetRecon continues:
+Most scanners stop at port discovery. NetLogic Replace continues:
 
 1. **Fingerprints** running services and extracts version strings via custom protocol probes (SSH, HTTP, FTP, Redis, MySQL, MongoDB…)
 2. **Correlates** discovered versions against a local CVE signature database *and* the live NIST NVD API
@@ -26,10 +26,10 @@ Most scanners stop at port discovery. NetRecon continues:
 ## Installation
 
 ```bash
-git clone https://github.com/yourusername/netrecon.git
-cd netrecon
+git clone https://github.com/yourusername/netlogic.git
+cd netlogic
 # No dependencies beyond Python 3.9+ standard library
-python netrecon.py --version
+python netlogic.py --version
 ```
 
 ---
@@ -38,16 +38,16 @@ python netrecon.py --version
 
 ```bash
 # Quick scan with terminal report
-python netrecon.py scanme.nmap.org
+python netlogic.py scanme.nmap.org
 
 # Full port scan + passive recon + HTML report
-python netrecon.py example.com --ports full --osint --report html --out ./reports
+python netlogic.py example.com --ports full --osint --report html --out ./reports
 
 # CIDR block sweep (internal network audit)
-python netrecon.py 192.168.1.0/24 --cidr --report json --out ./reports
+python netlogic.py 192.168.1.0/24 --cidr --report json --out ./reports
 
 # Custom port list, verbose timeout
-python netrecon.py 10.0.0.5 --ports custom=22,80,443,8080,9200 --timeout 3
+python netlogic.py 10.0.0.5 --ports custom=22,80,443,8080,9200 --timeout 3
 ```
 
 ---
@@ -56,7 +56,7 @@ python netrecon.py 10.0.0.5 --ports custom=22,80,443,8080,9200 --timeout 3
 
 ```
 ═══════════════════════════════════════════════════════════════════════
-  NetRecon Scan Report
+  NetLogic Replace Scan Report
   Target : scanme.nmap.org
   IP     : 45.33.32.156
   OS Est.: Linux/Unix
@@ -94,8 +94,8 @@ python netrecon.py 10.0.0.5 --ports custom=22,80,443,8080,9200 --timeout 3
 ## Architecture
 
 ```
-netrecon/
-├── netrecon.py          ← CLI entry point
+netlogic/
+├── netlogic.py          ← CLI entry point
 └── src/
     ├── scanner.py        ← TCP port scanner, service prober, banner grabber
     ├── cve_correlator.py ← CVE signature DB + NIST NVD live API correlation
@@ -155,7 +155,7 @@ netrecon/
 
 ## Legal Notice
 
-> **NetRecon is intended for authorized security assessments, penetration testing, and network administration only.**
+> **NetLogic Replace is intended for authorized security assessments, penetration testing, and network administration only.**
 > Scanning hosts without explicit written permission is illegal in most jurisdictions.
 > The author assumes no liability for unauthorized use.
 
