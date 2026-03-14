@@ -1,17 +1,17 @@
-# netrecon_engine.spec
+# netlogic_engine.spec
 # PyInstaller spec to bundle the Python scanner engine into a standalone binary.
 # Used by the Windows build pipeline so the app doesn't require Python installed.
 #
 # Build with:
 #   pip install pyinstaller
-#   pyinstaller netrecon_engine.spec
+#   pyinstaller netlogic_engine.spec
 
 import os
 
 block_cipher = None
 
 a = Analysis(
-    ['netrecon.py'],
+    ['netlogic.py'],
     pathex=[os.getcwd()],
     binaries=[],
     datas=[
@@ -53,7 +53,7 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name='netrecon_engine',
+    name='netlogic_engine',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

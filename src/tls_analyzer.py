@@ -1,5 +1,5 @@
 """
-NetRecon - SSL/TLS Deep Analyzer
+NetLogic Replace - SSL/TLS Deep Analyzer
 Checks for:
   - Certificate validity, expiry, self-signed, hostname mismatch
   - Protocol version support (SSLv2, SSLv3, TLS 1.0, TLS 1.1 — all deprecated)

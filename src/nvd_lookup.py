@@ -1,5 +1,5 @@
 """
-NetRecon - NVD Live CVE Lookup Engine
+NetLogic Replace - NVD Live CVE Lookup Engine
 ======================================
 Queries the NIST National Vulnerability Database API v2.0 for CVEs
 matching discovered product/version combinations.
@@ -12,7 +12,7 @@ Features:
   - CVSS v3.1 / v3.0 / v2.0 scoring with severity labels
   - Exploit awareness via CISA KEV (Known Exploited Vulnerabilities) catalog
   - No API key required (respects 5 req/30s public limit automatically)
-  - Optional API key for 50 req/30s limit (set NETRECON_NVD_KEY env var)
+  - Optional API key for 50 req/30s limit (set NETLOGIC_NVD_KEY env var)
 
 Usage:
   from src.nvd_lookup import lookup_cves_for_service
@@ -38,7 +38,7 @@ import concurrent.futures
 
 NVD_API_URL  = "https://services.nvd.nist.gov/rest/json/cves/2.0"
 KEV_URL      = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
-CACHE_DIR    = os.path.join(os.path.expanduser("~"), ".netrecon", "nvd_cache")
+CACHE_DIR    = os.path.join(os.path.expanduser("~"), ".netlogic", "nvd_cache")
 KEV_CACHE    = os.path.join(CACHE_DIR, "kev.json")
 CACHE_TTL    = 86400        # 24 hours
 MAX_RESULTS  = 20           # CVEs to fetch per product query
@@ -127,7 +127,7 @@ def _load_kev():
 
         # Fetch live
         try:
-            req = urllib.request.Request(KEV_URL, headers={"User-Agent": "NetRecon/2.0"})
+            req = urllib.request.Request(KEV_URL, headers={"User-Agent": "NetLogicReplace/2.0"})
             with urllib.request.urlopen(req, timeout=10) as resp:
                 raw = json.loads(resp.read())
             _kev_ids = {v["cveID"] for v in raw.get("vulnerabilities", [])}
@@ -148,7 +148,7 @@ def is_kev(cve_id: str) -> bool:
 
 def _rate_limit():
     global _last_request_time
-    api_key = os.environ.get("NETRECON_NVD_KEY", "")
+    api_key = os.environ.get("NETLOGIC_NVD_KEY", "")
     delay = RATE_DELAY_KEYED if api_key else RATE_DELAY
     with _rate_lock:
         now = time.time()
@@ -169,8 +169,8 @@ def _nvd_request(params: dict) -> Optional[dict]:
         return None
 
     _rate_limit()
-    api_key = os.environ.get("NETRECON_NVD_KEY", "")
-    headers = {"User-Agent": "NetRecon/2.0"}
+    api_key = os.environ.get("NETLOGIC_NVD_KEY", "")
+    headers = {"User-Agent": "NetLogic/2.0"}
     if api_key:
         headers["apiKey"] = api_key
 
@@ -202,7 +202,7 @@ def nvd_is_available() -> bool:
     try:
         req = urllib.request.Request(
             "https://services.nvd.nist.gov/rest/json/cves/2.0?resultsPerPage=1",
-            headers={"User-Agent": "NetRecon/2.0"}
+            headers={"User-Agent": "NetLogicReplace/2.0"}
         )
         urllib.request.urlopen(req, timeout=5)
         return True

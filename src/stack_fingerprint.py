@@ -1,5 +1,5 @@
 """
-NetRecon - Technology Stack Fingerprinter
+NetLogic Replace - Technology Stack Fingerprinter
 Identifies CMS, frameworks, cloud providers, CDNs, and WAFs from HTTP responses.
 
 Detection methods:
