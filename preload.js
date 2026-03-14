@@ -1,11 +1,11 @@
 /**
- * NetRecon Preload — Secure context bridge between renderer and main process.
+ * NetLogic Replace Preload — Secure context bridge between renderer and main process.
  * Only exposes explicitly defined APIs to the renderer (no full Node access).
  */
 
 const { contextBridge, ipcRenderer } = require('electron');
 
-contextBridge.exposeInMainWorld('netrecon', {
+contextBridge.exposeInMainWorld('netlogic', {
   // ── Scan Control ────────────────────────────────────────────────────────────
   startScan: (config) => ipcRenderer.send('scan:start', config),
   stopScan:  ()       => ipcRenderer.send('scan:stop'),

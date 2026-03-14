@@ -1,8 +1,8 @@
 """
-NetRecon - CVE Correlation Engine (NVD-powered)
-=================================================
+NetLogic Replace - CVE Correlation Engine (NVD-powered)
+=======================================================
 Replaces hardcoded CVE signatures with live NVD API lookups.
-Results are cached to disk (~/.netrecon/nvd_cache/) for 24 hours.
+Results are cached to disk (~/.netlogic/nvd_cache/) for 24 hours.
 
 Flow:
   1. scan_host() discovers open ports with service banners

@@ -1,5 +1,5 @@
 """
-NetRecon - DNS Security Checker
+NetLogic Replace - DNS Security Checker
 Comprehensive email and DNS security posture assessment.
 
 Checks:
@@ -99,7 +99,7 @@ def _doh(name: str, rtype: str) -> list[dict]:
     try:
         req = urllib.request.Request(url, headers={
             "Accept": "application/dns-json",
-            "User-Agent": "NetRecon/2.0",
+            "User-Agent": "NetLogicReplace/2.0",
         })
         with urllib.request.urlopen(req, timeout=6) as resp:
             data = json.loads(resp.read())

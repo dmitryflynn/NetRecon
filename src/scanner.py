@@ -1,5 +1,5 @@
 """
-NetRecon - Core Scanner Engine
+NetLogic Replace - Core Scanner Engine
 Performs active port scanning, service fingerprinting, and banner grabbing.
 """
 

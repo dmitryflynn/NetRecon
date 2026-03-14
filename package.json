@@ -1,5 +1,5 @@
 {
-  "name": "netrecon",
+  "name": "netlogic",
   "version": "1.0.0",
   "description": "Attack Surface Mapper & Vulnerability Correlator",
   "main": "electron/main.js",
@@ -11,8 +11,8 @@
     "pack": "electron-builder --dir"
   },
   "build": {
-    "appId": "com.netrecon.app",
-    "productName": "NetRecon",
+    "appId": "com.netlogic.app",
+    "productName": "NetLogic",
     "copyright": "Copyright © 2024",
     "directories": {
       "output": "dist",
@@ -22,7 +22,7 @@
       "electron/**/*",
       "renderer/**/*",
       "src/**/*",
-      "netrecon.py",
+      "netlogic.py",
       "assets/**/*",
       "python_dist/**/*"
     ],
@@ -56,12 +56,12 @@
       "installerHeaderIcon": "assets/icon.ico",
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "NetRecon",
+      "shortcutName": "NetLogic Replace",
       "license": "LICENSE",
       "runAfterFinish": true
     },
     "portable": {
-      "artifactName": "NetRecon-${version}-portable.exe"
+      "artifactName": "NetLogic Replace-${version}-portable.exe"
     }
   },
   "devDependencies": {
