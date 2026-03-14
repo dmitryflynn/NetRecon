@@ -1,8 +1,8 @@
-# NetLogic Replace 🔍
+# NetLogic 🔍
 
 **Attack Surface Mapper & Vulnerability Correlator**
 
-NetLogic Replace is a professional-grade network security reconnaissance tool that combines active port scanning, passive OSINT, and automated CVE correlation into a single workflow — replacing what typically requires three or four separate tools and manual cross-referencing.
+NetLogic is a professional-grade network security reconnaissance tool that combines active port scanning, passive OSINT, and automated CVE correlation into a single workflow — replacing what typically requires three or four separate tools and manual cross-referencing.
 
 ![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue)
 ![License: MIT](https://img.shields.io/badge/License-MIT-green)
@@ -12,7 +12,7 @@ NetLogic Replace is a professional-grade network security reconnaissance tool th
 
 ## What makes this different?
 
-Most scanners stop at port discovery. NetLogic Replace continues:
+Most scanners stop at port discovery. NetLogic continues:
 
 1. **Fingerprints** running services and extracts version strings via custom protocol probes (SSH, HTTP, FTP, Redis, MySQL, MongoDB…)
 2. **Correlates** discovered versions against a local CVE signature database *and* the live NIST NVD API
@@ -56,7 +56,7 @@ python netlogic.py 10.0.0.5 --ports custom=22,80,443,8080,9200 --timeout 3
 
 ```
 ═══════════════════════════════════════════════════════════════════════
-  NetLogic Replace Scan Report
+  NetLogic Scan Report
   Target : scanme.nmap.org
   IP     : 45.33.32.156
   OS Est.: Linux/Unix
@@ -155,7 +155,7 @@ netlogic/
 
 ## Legal Notice
 
-> **NetLogic Replace is intended for authorized security assessments, penetration testing, and network administration only.**
+> **NetLogic is intended for authorized security assessments, penetration testing, and network administration only.**
 > Scanning hosts without explicit written permission is illegal in most jurisdictions.
 > The author assumes no liability for unauthorized use.
 
