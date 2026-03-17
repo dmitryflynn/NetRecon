@@ -2,7 +2,7 @@
 
 **Attack Surface Mapper & Vulnerability Correlator**
 
-NetLogic is a professional-grade network security reconnaissance tool that combines active port scanning, passive OSINT, live CVE correlation, SSL/TLS analysis, HTTP security auditing, WAF detection, DNS/email security assessment, and subdomain takeover detection into a single workflow — replacing what typically requires six or seven separate tools and hours of manual cross-referencing.
+NetLogic is a professional-grade network security reconnaissance tool that combines active port scanning, passive OSINT, live CVE correlation, SSL/TLS analysis, HTTP security auditing, WAF detection, DNS/email security assessment, and subdomain takeover detection into a single workflow replacing what typically requires six or seven separate tools and hours of manual cross-referencing.
 
 ![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue)
 ![License: MIT](https://img.shields.io/badge/License-MIT-green)
