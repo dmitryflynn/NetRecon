@@ -1,5 +1,5 @@
 """
-NetLogic Replace - JSON Stream Bridge
+NetLogic - JSON Stream Bridge
 Wraps the scanner to emit newline-delimited JSON events for the Electron frontend.
 Each line is a JSON object: {"type": "...", "data": {...}} or {"type": "error", "message": "..."}
 """
@@ -9,7 +9,6 @@ import json
 import time
 from dataclasses import asdict
 
-# Import core modules
 from src.scanner import scan_host, scan_cidr, COMMON_PORTS, EXTENDED_PORTS
 from src.cve_correlator import correlate
 from src.osint import run_osint
@@ -25,56 +24,131 @@ def emit(event_type: str, data=None, message: str = None):
 
 
 def run_streaming_scan(target: str, ports: list, timeout: float,
-                       threads: int, do_osint: bool, cidr: bool):
+                       threads: int, do_osint: bool, cidr: bool,
+                       do_tls: bool = False, do_headers: bool = False,
+                       do_stack: bool = False, do_dns: bool = False,
+                       do_full: bool = False, min_cvss: float = 4.0):
     """Execute a scan and stream results as JSON events."""
 
-    # Emit host discovery start
-    emit("progress", {"percent": 5, "status": f"Resolving {target}…"})
+    emit("progress", {"percent": 5, "status": f"Resolving {target}..."})
 
     if cidr:
-        # CIDR sweep
-        from src.scanner import scan_cidr
         hosts = scan_cidr(target, ports=ports, max_workers=threads, timeout=timeout)
+        total_p = 0
+        total_v = 0
         for hr in hosts:
-            host_data = asdict(hr)
-            emit("host", host_data)
-            vuln_matches = correlate(hr.ports)
+            emit("host", asdict(hr))
+            for p in hr.ports:
+                total_p += 1
+                emit("port", {"target": hr.ip, **asdict(p)})
+            vuln_matches = correlate(hr.ports, min_cvss=min_cvss, verbose=False)
             for vm in vuln_matches:
-                emit("vuln", _vuln_to_dict(vm))
-        emit("done", {"hosts": len(hosts)})
+                total_v += 1
+                emit("vuln", {"target": hr.ip, **_vuln_to_dict(vm)})
+        if do_osint or do_full:
+            emit("progress", {"percent": 92, "status": "Running passive OSINT on base target..."})
+            try:
+                osint = run_osint(target, ip=hosts[0].ip if hosts else None)
+                from dataclasses import asdict as _asdict
+                emit("osint", {
+                    "dns_records":  [_asdict(r) for r in osint.dns_records],
+                    "subdomains":   [_asdict(s) for s in osint.subdomains],
+                    "technologies": osint.technologies,
+                    "emails":       osint.emails,
+                    "asn_info":     _asdict(osint.asn_info) if osint.asn_info else None,
+                })
+            except Exception as e:
+                emit("log", {"text": f"OSINT: {e}", "level": "warn"})
+
+        emit("done", {
+            "hosts": len(hosts),
+            "ports": total_p,
+            "vulns": total_v,
+            "duration": getattr(hosts[-1], "scan_duration_s", 0) if hosts else 0
+        })
         return
 
-    # Single host scan — stream ports as they open
-    # We need to modify scan_host to stream; for now, run normally and stream after
-    emit("progress", {"percent": 10, "status": "Scanning ports…"})
-
+    emit("progress", {"percent": 10, "status": "Scanning ports..."})
     result = _scan_streaming(target, ports, threads, timeout)
 
-    # Emit host info
     emit("host", {
-        "target": result.target,
-        "ip": result.ip,
-        "hostname": result.hostname,
-        "os_guess": result.os_guess,
-        "timestamp": result.timestamp,
-        "scan_duration_s": result.scan_duration_s,
+        "target":         result.target,
+        "ip":             result.ip,
+        "hostname":       result.hostname,
+        "os_guess":       result.os_guess,
+        "timestamp":      result.timestamp,
+        "scan_duration_s":result.scan_duration_s,
     })
 
-    # Ports already emitted in real-time inside _scan_streaming
-    emit("progress", {"percent": 60, "status": f"Found {len(result.ports)} open ports, correlating CVEs…"})
+    # Ports already streamed live inside _scan_streaming
+    emit("progress", {"percent": 60, "status": f"Found {len(result.ports)} open ports, correlating CVEs..."})
 
     # CVE correlation
-    vuln_matches = correlate(result.ports)
-    emit("progress", {"percent": 80, "status": f"Found {len(vuln_matches)} findings…"})
+    vuln_matches = correlate(result.ports, min_cvss=4.0, verbose=False)
+    emit("progress", {"percent": 75, "status": f"Found {len(vuln_matches)} vulnerability findings..."})
     for vm in vuln_matches:
-        emit("vuln", _vuln_to_dict(vm))
+        emit("vuln", {"target": result.ip, **_vuln_to_dict(vm)})
 
-    # OSINT
-    if do_osint:
-        emit("progress", {"percent": 85, "status": "Running passive OSINT…"})
+    from dataclasses import asdict as _asdict
+
+    # TLS Analysis
+    if do_tls or do_full:
+        emit("progress", {"percent": 78, "status": "Running TLS analysis..."})
+        try:
+            from src.tls_analyzer import analyze_tls_ports
+            tls_ports = [p.port for p in result.ports
+                         if p.tls or p.port in (443, 8443, 993, 995, 465)]
+            if not tls_ports:
+                tls_ports = [443]
+            tls_results = analyze_tls_ports(target, tls_ports)
+            if tls_results:
+                emit("tls", {"results": [_asdict(r) for r in tls_results]})
+        except Exception as e:
+            emit("log", {"text": f"TLS: {e}", "level": "warn"})
+
+    # HTTP Header Audit
+    if do_headers or do_full:
+        emit("progress", {"percent": 82, "status": "Auditing HTTP security headers..."})
+        try:
+            from src.header_audit import audit_headers
+            http_port = next(
+                (p.port for p in result.ports if p.service in ("http", "https", "http-alt", "https-alt")),
+                80
+            )
+            audit = audit_headers(target, http_port)
+            emit("headers", _asdict(audit))
+        except Exception as e:
+            emit("log", {"text": f"Headers: {e}", "level": "warn"})
+
+    # Technology Stack
+    if do_stack or do_headers or do_full:
+        emit("progress", {"percent": 85, "status": "Fingerprinting technology stack..."})
+        try:
+            from src.stack_fingerprint import fingerprint_stack
+            http_port = next(
+                (p.port for p in result.ports if p.service in ("http", "https", "http-alt", "https-alt")),
+                80
+            )
+            stack = fingerprint_stack(target, http_port)
+            emit("stack", _asdict(stack))
+        except Exception as e:
+            emit("log", {"text": f"Stack: {e}", "level": "warn"})
+
+    # DNS Security
+    if do_dns or do_full:
+        emit("progress", {"percent": 88, "status": "Checking DNS/email security..."})
+        try:
+            from src.dns_security import check_dns_security
+            dns_result = check_dns_security(target)
+            emit("dns", _asdict(dns_result))
+        except Exception as e:
+            emit("log", {"text": f"DNS: {e}", "level": "warn"})
+
+    # Passive OSINT
+    if do_osint or do_full:
+        emit("progress", {"percent": 92, "status": "Running passive OSINT..."})
         try:
             osint = run_osint(target, ip=result.ip)
-            from dataclasses import asdict as _asdict
             emit("osint", {
                 "dns_records":  [_asdict(r) for r in osint.dns_records],
                 "subdomains":   [_asdict(s) for s in osint.subdomains],
@@ -83,26 +157,20 @@ def run_streaming_scan(target: str, ports: list, timeout: float,
                 "asn_info":     _asdict(osint.asn_info) if osint.asn_info else None,
             })
         except Exception as e:
-            emit("error", message=f"OSINT failed: {e}")
+            emit("log", {"text": f"OSINT: {e}", "level": "warn"})
 
     emit("progress", {"percent": 100, "status": "Scan complete."})
     emit("done", {
-        "ports": len(result.ports),
-        "vulns": len(vuln_matches),
+        "ports":    len(result.ports),
+        "vulns":    len(vuln_matches),
         "duration": result.scan_duration_s,
     })
 
 
 def _scan_streaming(target, ports, threads, timeout):
-    """
-    Run scan_host but emit ports as they are discovered.
-    Uses a modified concurrent approach to stream results live.
-    """
-    import socket
+    """Run scan but emit ports in real time as they are discovered."""
     import concurrent.futures
-    from src.scanner import (
-        probe_port, resolve_target, guess_os_from_ttl, HostResult
-    )
+    from src.scanner import probe_port, resolve_target, guess_os_from_ttl, HostResult
 
     start = time.time()
     ip, hostname = resolve_target(target)
@@ -126,16 +194,13 @@ def _scan_streaming(target, ports, threads, timeout):
             port_result = future.result()
             if port_result.state == "open":
                 result.ports.append(port_result)
-                # Stream this port immediately to the frontend
-                emit("port", asdict(port_result))
+                emit("port", {"target": ip, **asdict(port_result)})
 
-            # Periodic progress updates
             if completed % max(1, total // 20) == 0:
-                pct = 10 + int((completed / total) * 50)
+                pct = 10 + int((completed / total) * 48)
                 emit("progress", {
                     "percent": pct,
-                    "status": f"Scanned {completed}/{total} ports…",
-                    "open": len(result.ports),
+                    "status":  f"Scanned {completed}/{total} ports... ({len(result.ports)} open)",
                 })
 
     result.ports.sort(key=lambda p: p.port)
@@ -145,6 +210,7 @@ def _scan_streaming(target, ports, threads, timeout):
 
 
 def _vuln_to_dict(vm) -> dict:
+    """Convert a VulnMatch to a JSON-serialisable dict for the frontend."""
     return {
         "port":       vm.port,
         "service":    vm.service,
@@ -152,16 +218,20 @@ def _vuln_to_dict(vm) -> dict:
         "version":    vm.version,
         "risk_score": vm.risk_score,
         "notes":      vm.notes,
+        "source":     getattr(vm, "source", "nvd"),
         "cves": [
             {
                 "id":               c.id,
                 "description":      c.description,
                 "cvss_score":       c.cvss_score,
                 "severity":         c.severity,
-                "vector":           c.vector,
-                "published":        c.published,
+                "vector":           getattr(c, "vector", ""),
+                "published":        getattr(c, "published", ""),
                 "exploit_available":c.exploit_available,
-                "references":       c.references,
+                "kev":              getattr(c, "kev", False),
+                "cwe":              getattr(c, "cwe", ""),
+                "version_range":    getattr(c, "version_range", ""),
+                "references":       getattr(c, "references", []),
             }
             for c in vm.cves
         ],

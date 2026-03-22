@@ -247,7 +247,14 @@ def scan_host(target: str, ports: list[int] = None, max_workers: int = 100,
 
 
 def scan_cidr(cidr: str, **kwargs) -> list[HostResult]:
-    """Scan every host in a CIDR block (e.g. 192.168.1.0/24)."""
+    """Scan every host in a CIDR block to discover network structure and devices."""
+    # Resolve hostname to IP first in case the user provided a domain
+    base_target = cidr.split('/')[0]
+    mask = cidr.split('/')[1] if '/' in cidr else "24"
+    
+    ip, _ = resolve_target(base_target)
+    cidr = f"{ip}/{mask}"
+        
     network = ipaddress.ip_network(cidr, strict=False)
     hosts = [str(h) for h in network.hosts()]
     results = []

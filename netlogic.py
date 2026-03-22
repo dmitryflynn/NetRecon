@@ -19,12 +19,12 @@ from src.reporter       import (
 VERSION = "2.0.0"
 BANNER = f"""
 {C.CYAN}{C.BOLD}
-  ███╗   ██╗███████╗████████╗██████╗ ███████╗ ██████╗ ██████╗ ███╗  ██╗
-  ████╗  ██║██╔════╝╚══██╔══╝██╔══██╗██╔════╝██╔════╝██╔═══██╗████╗ ██║
-  ██╔██╗ ██║█████╗     ██║   ██████╔╝█████╗  ██║     ██║   ██║██╔██╗██║
-  ██║╚██╗██║██╔══╝     ██║   ██╔══██╗██╔══╝  ██║     ██║   ██║██║╚████║
-  ██║ ╚████║███████╗   ██║   ██║  ██║███████╗╚██████╗╚██████╔╝██║ ╚███║
-  ╚═╝  ╚═══╝╚══════╝   ╚═╝   ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═════╝ ╚═╝  ╚══╝
+  ███╗   ██╗███████╗████████╗██╗      ██████╗  ██████╗ ██╗ ██████╗
+  ████╗  ██║██╔════╝╚══██╔══╝██║     ██╔═══██╗██╔════╝ ██║██╔════╝
+  ██╔██╗ ██║█████╗     ██║   ██║     ██║   ██║██║  ███╗██║██║
+  ██║╚██╗██║██╔══╝     ██║   ██║     ██║   ██║██║   ██║██║██║
+  ██║ ╚████║███████╗   ██║   ███████╗╚██████╔╝╚██████╔╝██║╚██████╗
+  ╚═╝  ╚═══╝╚══════╝   ╚═╝   ╚══════╝ ╚═════╝  ╚═════╝ ╚═╝ ╚═════╝
 {C.RESET}  {C.DIM}Attack Surface Mapper & Vulnerability Correlator  v{VERSION}{C.RESET}
   {C.DIM}For authorized security assessments only.{C.RESET}
 """
@@ -456,8 +456,15 @@ def main():
         try:
             run_streaming_scan(
                 target=args.target, ports=ports, timeout=args.timeout,
-                threads=args.threads, do_osint=(args.osint or args.full),
+                threads=args.threads,
+                do_osint=(args.osint or args.full),
                 cidr=args.cidr,
+                do_tls=(args.tls or args.full),
+                do_headers=(args.headers or args.full),
+                do_stack=(getattr(args, 'stack', False) or args.full),
+                do_dns=(getattr(args, 'dns', False) or args.full),
+                do_full=args.full,
+                min_cvss=getattr(args, 'min_cvss', 4.0),
             )
         except Exception as e:
             emit("error", message=str(e))
