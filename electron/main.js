@@ -60,7 +60,7 @@ function getPythonPath() {
         console.log(`[python] using system ${candidate} with script: ${scriptPath}`);
         return { exe: candidate, script: scriptPath };
       }
-    } catch {}
+    } catch { }
   }
 
   return null;
@@ -137,10 +137,9 @@ function createTray() {
  *   {"type": "error", "message": "..."}
  */
 function startScan(event, config) {
-  // Kill any existing scan
   if (activeScanProcess) {
-    activeScanProcess.kill();
-    activeScanProcess = null;
+    console.log('[scan] already running, aborting second start');
+    return;
   }
 
   const python = getPythonPath();
@@ -209,15 +208,16 @@ function buildPythonArgs(config, scriptPath) {
   args.push(config.target);
   args.push('--json-stream');
   args.push('--ports', config.portSet || 'quick');
-  if (config.full)    args.push('--full');
-  if (config.osint)   args.push('--osint');
-  if (config.tls)     args.push('--tls');
+  if (config.full) args.push('--full');
+  if (config.osint) args.push('--osint');
+  if (config.tls) args.push('--tls');
   if (config.headers) args.push('--headers');
-  if (config.dns)     args.push('--dns');
-  if (config.stack)   args.push('--stack');
-  if (config.cidr)    args.push('--cidr');
+  if (config.dns) args.push('--dns');
+  if (config.stack) args.push('--stack');
+  if (config.cidr) args.push('--cidr');
   if (config.timeout) args.push('--timeout', String(config.timeout));
   if (config.threads) args.push('--threads', String(config.threads));
+  if (config.minCvss) args.push('--min-cvss', String(config.minCvss));
   args.push('--no-color');
 
   return args;
@@ -225,19 +225,26 @@ function buildPythonArgs(config, scriptPath) {
 
 function routeScanMessage(event, msg) {
   switch (msg.type) {
-    case 'port':    event.reply('scan:port',    msg.data); break;
-    case 'vuln':    event.reply('scan:vuln',    msg.data); break;
-    case 'osint':   event.reply('scan:osint',   msg.data); break;
-    case 'host':    event.reply('scan:host',    msg.data); break;
-    case 'progress':event.reply('scan:progress',msg.data); break;
-    case 'error':   event.reply('scan:error',   { message: msg.message }); break;
-    default:        event.reply('scan:log',     { text: JSON.stringify(msg) });
+    case 'port': event.reply('scan:port', msg.data); break;
+    case 'vuln': event.reply('scan:vuln', msg.data); break;
+    case 'osint': event.reply('scan:osint', msg.data); break;
+    case 'host': event.reply('scan:host', msg.data); break;
+    case 'progress': event.reply('scan:progress', msg.data); break;
+    case 'tls': event.reply('scan:tls', msg.data); break;
+    case 'headers': event.reply('scan:headers', msg.data); break;
+    case 'stack': event.reply('scan:stack', msg.data); break;
+    case 'dns': event.reply('scan:dns', msg.data); break;
+    case 'takeover': event.reply('scan:takeover', msg.data); break;
+    case 'log': event.reply('scan:log', msg.data); break;
+    case 'error': event.reply('scan:error', { message: msg.message }); break;
+    case 'done': event.reply('scan:done', msg.data); break;
+    default: event.reply('scan:log', { text: JSON.stringify(msg) });
   }
 }
 
 function stopScan() {
   if (activeScanProcess) {
-    activeScanProcess.kill('SIGTERM');
+    activeScanProcess.kill('SIGKILL');  // Aggressive kill to prevent ghost logs
     activeScanProcess = null;
     return true;
   }
@@ -250,7 +257,7 @@ async function exportReport(event, { format, data }) {
   const filters = {
     json: [{ name: 'JSON', extensions: ['json'] }],
     html: [{ name: 'HTML Report', extensions: ['html'] }],
-    csv:  [{ name: 'CSV', extensions: ['csv'] }],
+    csv: [{ name: 'CSV', extensions: ['csv'] }],
   };
 
   const result = await dialog.showSaveDialog(mainWindow, {
@@ -310,10 +317,10 @@ function generateHTMLReport(data) {
     (vm.cves || []).map(cve => `
     <tr>
       <td><code>${cve.id}</code></td>
-      <td style="color:${cve.severity==='CRITICAL'?'#f85149':cve.severity==='HIGH'?'#ff7b72':'#e3b341'}">${cve.severity}</td>
+      <td style="color:${cve.severity === 'CRITICAL' ? '#f85149' : cve.severity === 'HIGH' ? '#ff7b72' : '#e3b341'}">${cve.severity}</td>
       <td>${cve.cvss_score}</td>
       <td>${vm.port}/${vm.service}</td>
-      <td>${cve.description?.slice(0,100)}…</td>
+      <td>${cve.description?.slice(0, 100)}…</td>
     </tr>`)
   ).join('');
 
@@ -346,8 +353,8 @@ td{padding:.5rem;border-bottom:1px solid #21262d}
 
 // ─── IPC Handlers ─────────────────────────────────────────────────────────────
 
-ipcMain.on('scan:start',  (event, config) => startScan(event, config));
-ipcMain.on('scan:stop',   (event) => { stopScan(); event.reply('scan:stopped'); });
+ipcMain.on('scan:start', (event, config) => startScan(event, config));
+ipcMain.on('scan:stop', (event) => { stopScan(); event.reply('scan:stopped'); });
 ipcMain.handle('report:export', (event, payload) => exportReport(event, payload));
 ipcMain.handle('app:versions', () => ({
   app: app.getVersion(),

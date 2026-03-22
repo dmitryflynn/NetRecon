@@ -22,11 +22,18 @@ contextBridge.exposeInMainWorld('netlogic', {
   onScanError:    (cb) => ipcRenderer.on('scan:error',    (_, d) => cb(d)),
   onScanLog:      (cb) => ipcRenderer.on('scan:log',      (_, d) => cb(d)),
 
+  onScanTLS:      (cb) => ipcRenderer.on('scan:tls',      (_, d) => cb(d)),
+  onScanHeaders:  (cb) => ipcRenderer.on('scan:headers',  (_, d) => cb(d)),
+  onScanStack:    (cb) => ipcRenderer.on('scan:stack',    (_, d) => cb(d)),
+  onScanDNS:      (cb) => ipcRenderer.on('scan:dns',      (_, d) => cb(d)),
+  onScanTakeover: (cb) => ipcRenderer.on('scan:takeover', (_, d) => cb(d)),
+
   // Remove all scan listeners (call before starting new scan)
   removeAllScanListeners: () => {
     for (const ch of ['scan:started','scan:port','scan:vuln','scan:osint',
                        'scan:host','scan:progress','scan:done','scan:stopped',
-                       'scan:error','scan:log']) {
+                       'scan:error','scan:log','scan:tls','scan:headers',
+                       'scan:stack','scan:dns','scan:takeover']) {
       ipcRenderer.removeAllListeners(ch);
     }
   },

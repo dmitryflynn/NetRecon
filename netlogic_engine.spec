@@ -6,11 +6,11 @@ a = Analysis(
     pathex=[],
     binaries=[],
     datas=[('src', 'src')],
-    hiddenimports=['ssl'],
+    hiddenimports=['src.scanner', 'src.cve_correlator', 'src.nvd_lookup', 'src.osint', 'src.reporter', 'src.tls_analyzer', 'src.header_audit', 'src.takeover', 'src.stack_fingerprint', 'src.dns_security', 'src.json_bridge', 'ssl', 'certifi', 'requests', 'concurrent.futures'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=[],
+    excludes=['tkinter', 'matplotlib', 'numpy'],
     noarchive=False,
     optimize=0,
 )
